@@ -13,3 +13,21 @@ def verify_password_and_get_userdata(token: int, userID: str):
                 if (bcrypt.checkpw(token.encode("utf-8"), row[1].encode("utf-8"))):
                     return {'password_reset_hashed_token': row[1]}
             return ""
+
+def verify_captcha(captcha_id, captcha_value):
+    try:
+        with get_connection() as con:
+            with con.cursor() as cur:
+                cur.execute(
+                    "SELECT * FROM captcha WHERE captcha_id = :captcha_id", captcha_id=captcha_id)
+                dataCaptcha = cur.fetchone()
+                if dataCaptcha is None:
+                    return False
+                captcha_value_db = dataCaptcha[1]
+                cur.execute(
+                    "DELETE FROM captcha WHERE captcha_id = :captcha_id", captcha_id=captcha_id)
+                con.commit()
+                return bcrypt.checkpw(captcha_value.encode("utf-8"), captcha_value_db.encode("utf-8")) == True
+    except Exception as e:
+        print(e)
+        return False

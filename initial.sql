@@ -151,9 +151,6 @@ BEGIN
 END;
 /
 
---INSERT INTO user_password_reset (user_id, password_reset_hashed_token) VALUES (3, '12345');
-
--- Create the trigger to delete expired password reset token every 5 minutes
 BEGIN 
   DBMS_SCHEDULER.CREATE_JOB(
     job_name => 'DELETE_EXPIRED_PASSWORD_RESET_TOKEN',
@@ -165,3 +162,31 @@ BEGIN
   );
 END;
 /
+
+CREATE TABLE captcha (
+  captcha_id VARCHAR(100) NOT NULL,
+  captcha_value VARCHAR(100) NOT NULL,
+  captcha_expiration TIMESTAMP,
+  PRIMARY KEY (captcha_id),
+);
+
+CREATE OR REPLACE TRIGGER tr_set_captcha_expiration_captcha
+BEFORE INSERT ON captcha
+FOR EACH ROW
+BEGIN
+  :NEW.captcha_expiration := get_date_plus_x_minutes(5);
+END;
+
+BEGIN 
+  DBMS_SCHEDULER.CREATE_JOB(
+    job_name => 'DELETE_EXPIRED_CAPTCHA',
+    job_type => 'PLSQL_BLOCK',
+    job_action => 'BEGIN DELETE FROM captcha WHERE captcha_expiration < SYSTIMESTAMP; END;',
+    start_date => SYSTIMESTAMP,
+    repeat_interval => 'FREQ=DAILY; INTERVAL=1',
+    enabled => TRUE
+  );
+END;
+
+
+
