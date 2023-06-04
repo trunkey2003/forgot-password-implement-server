@@ -1,5 +1,6 @@
 from services.database_connection_service import get_connection
 import bcrypt
+from datetime import datetime
 
 def verify_password_and_get_userdata(token: int, userID: str):
     with get_connection() as con:
@@ -11,8 +12,11 @@ def verify_password_and_get_userdata(token: int, userID: str):
                 return None
             for row in dataUserPasswordReset:
                 if (bcrypt.checkpw(token.encode("utf-8"), row[1].encode("utf-8"))):
+                    expiration_timestamp = row[2]
+                    if (expiration_timestamp < datetime.now()):
+                        return None
                     return {'password_reset_hashed_token': row[1]}
-            return ""
+            return None
 
 def verify_captcha(captcha_id, captcha_value):
     try:

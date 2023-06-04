@@ -146,9 +146,6 @@ def reset_password(data: ResetPasswordSchema):
                 data = verify_password_and_get_userdata(token, userID)
                 if (data is None):
                     return {'message': 'Invalid token'}, 400
-                password_reset_hashed_token = data['password_reset_hashed_token']
-                if (password_reset_hashed_token == ""):
-                    return {'message': 'Invalid token'}, 400
                 hashed_password = bcrypt.hashpw(
                     password.encode("utf-8"), salt).decode("utf-8")
                 cur.execute("UPDATE users SET password = :password WHERE user_id = :user_id", {
